@@ -1,73 +1,87 @@
 import React from 'react';
-import styles from './Users.module.css';
+import styles from "./Users.module.css";
+import userPhoto from "../../assets/image/avatar.png";
+import {NavLink} from "react-router-dom";
+import axios from "axios";
 
 const Users = (props) => {
-    console.log(props.users)
-    if (!props.users.length) {
-        props.setUsers([
-                {
-                    id: 1,
-                    photoUrl: 'https://mp3erger.com/_ld/47/46695339.jpg',
-                    followed: false,
-                    fullName: 'Lyov',
-                    status: 'I am a boss',
-                    location: {city: 'Yerevan', country: 'Armenia'}
-                },
-                {
-                    id: 2,
-                    photoUrl: 'https://mp3erger.com/_ld/47/46695339.jpg',
-                    followed: true,
-                    fullName: 'Vlad',
-                    status: 'I am a niger',
-                    location: {city: 'Moscow', country: 'Russia'}
-                },
-                {
-                    id: 3,
-                    photoUrl: 'https://mp3erger.com/_ld/47/46695339.jpg',
-                    followed: false,
-                    fullName: 'Arsen',
-                    status: 'I am a niger',
-                    location: {city: 'Kiev', country: 'Ukraine'}
-                }
-            ]
-        )
+
+    let pagesCount = Math.ceil(props.totalUsersCount / props.pageSize);
+    let pages = [];
+    for (let i = 1; i <= pagesCount; i++) {
+        pages.push(i);
     }
-    return (
+
+    return <div>
         <div>
-            {
-                props.users.map((u, index) => {
-                    return (
-                        <div key={index}>
-                            <div>
-                                <div>
-                                    <img src={u.photoUrl} alt="user" className={styles.usersPhoto}/>
-                                </div>
-                                <div>
-                                <div>
-                                    {
-                                        u.followed
-                                        ? <button onClick={() => props.unfollow(u.id)}>Unfollow</button>
-                                        : <button onClick={() => props.follow(u.id)}>Follow</button>
-                                    }
-                                </div>
-                            </div>
-                            <div>
-                                <span>
-                                    <div>{u.fullName}</div>
-                                    <div>{u.status}</div>
-                                </span>
-                                <span>
-                                    <div>{u.location.country}</div>
-                                    <div>{u.location.city}</div>
-                                </span>
-                            </div>
-                        </div>
-                        </div>
-                    )
-                })
-            }
+            {pages.map(p => {
+                return <span key={Math.random()}
+                             className={`${props.currentPage === p && styles.selectedPage}`}
+                             onClick={() => {
+                                 props.onPageChanged(p);
+                             }}>{p}</span>
+            })}
         </div>
-    )
+        {
+            props.users.map(u => <div key={u.id}>
+                    <span>
+                        <div>
+                            <NavLink to={'/profile/' + u.id}>
+                                <img src={u.photos.small != null ? u.photos.small : userPhoto} alt={'User'}
+                                     className={styles.usersPhoto}/>
+                            </NavLink>
+                        </div>
+                        <div>
+                            {u.followed
+                                ? <button onClick={() => {
+
+                                    axios.delete(`https://social-network.samuraijs.com/api/1.0/follow/${u.id}`, {
+                                        withCredentials: true,
+                                        headers: {
+                                            "API-KEY": "b1775b2f-c3a5-4509-8dc9-90b5629de7c3"
+                                        }
+                                    })
+                                        .then(response => {
+                                            if (response.data.resultCode === 0) {
+                                                props.unfollow(u.id);
+                                            }
+                                        });
+
+                                    props.unfollow(u.id)
+
+                                }}>Unfollow</button>
+                                : <button onClick={() => {
+
+                                    axios.post(`https://social-network.samuraijs.com/api/1.0/follow/${u.id}`, {}, {
+                                        withCredentials: true,
+                                        headers: {
+                                            "API-KEY": "b1775b2f-c3a5-4509-8dc9-90b5629de7c3"
+                                        }
+                                    })
+                                        .then(response => {
+                                            if (response.data.resultCode === 0) {
+                                                props.follow(u.id);
+                                            }
+                                        });
+
+                                    props.follow(u.id)
+
+                                }}>Follow</button>}
+                        </div>
+                    </span>
+                <span>
+                        <span>
+                            <div>{u.name}</div>
+                            <div>{u.status}</div>
+                        </span>
+                        <span>
+                            <div>{"u.location.country"}</div>
+                            <div>{"u.location.city"}</div>
+                        </span>
+                    </span>
+            </div>)
+        }
+    </div>
 }
 
 export default Users;
